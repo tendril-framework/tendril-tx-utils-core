@@ -1,6 +1,7 @@
 
 
 import io
+import sys
 from twisted import logger
 
 from twisted.logger import globalLogPublisher
@@ -31,6 +32,7 @@ class TwistedLoggerMixin(object):
 
     def observers(self):
         rv = []
+        stdout_level = logger.LogLevel.info
         if self.log_file:
             rv.append(
                 FilteringLogObserver(
@@ -38,6 +40,13 @@ class TwistedLoggerMixin(object):
                     predicates=[LogLevelFilterPredicate(logger.LogLevel.info)]
                 ),
             )
+            stdout_level = logger.LogLevel.warn
+        rv.append(
+            FilteringLogObserver(
+                textFileLogObserver(sys.stdout),
+                predicates=[LogLevelFilterPredicate(stdout_level)]
+            ),
+        )
         return rv
 
     def log_init(self):
