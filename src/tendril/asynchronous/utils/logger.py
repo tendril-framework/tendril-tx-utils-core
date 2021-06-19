@@ -50,8 +50,16 @@ class TwistedLoggerMixin(object):
         return rv
 
     def log_init(self):
+        # TODO Fix what this does when you have multiple objects
+        #      calling log_init()
+        for observer in globalLogPublisher._observers:
+            print("Removing pre-installed log observer: ", observer)
+            globalLogPublisher.removeObserver(observer)
         for observer in self.observers():
+            print("            Installing log observer: ", observer)
             globalLogPublisher.addObserver(observer)
+        for observer in globalLogPublisher._observers:
+            print("                 Using log observer: ", observer)
 
     @property
     def log(self):
