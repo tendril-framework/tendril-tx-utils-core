@@ -10,6 +10,30 @@ from twisted.logger import FilteringLogObserver
 from twisted.logger import textFileLogObserver
 
 
+class TwistedLogObserverManager(object):
+    def __init__(self):
+        self._observers = {}
+
+    @property
+    def observers(self):
+        return self._observers
+
+    def init(self):
+        for observer in globalLogPublisher._observers:
+            print("Removing pre-installed log observer: ", observer)
+            globalLogPublisher.removeObserver(observer)
+
+    def add_observer(self, name, observer):
+        if name not in self._observers.keys():
+            self._observers[name] = observer
+            print("Installing log observer: ", observer)
+            globalLogPublisher.addObserver(observer)
+
+
+manager = TwistedLogObserverManager()
+manager.init()
+
+
 class TwistedLoggerMixin(object):
     def __init__(self, *args, **kwargs):
         super(TwistedLoggerMixin, self).__init__(*args, **kwargs)
@@ -32,34 +56,28 @@ class TwistedLoggerMixin(object):
 
     def observers(self):
         rv = []
-        stdout_level = logger.LogLevel.info
+        stdout_level = self.level
         if self.log_file:
             rv.append(
-                FilteringLogObserver(
+                ('file', FilteringLogObserver(
                     textFileLogObserver(io.open(self.log_file, 'a')),
                     predicates=[LogLevelFilterPredicate(logger.LogLevel.info)]
-                ),
+                ))
             )
             stdout_level = logger.LogLevel.warn
         rv.append(
-            FilteringLogObserver(
+            ('stdout', FilteringLogObserver(
                 textFileLogObserver(sys.stdout),
                 predicates=[LogLevelFilterPredicate(stdout_level)]
-            ),
+            ))
         )
         return rv
 
     def log_init(self):
         # TODO Fix what this does when you have multiple objects
         #      calling log_init()
-        for observer in globalLogPublisher._observers:
-            print("Removing pre-installed log observer: ", observer)
-            globalLogPublisher.removeObserver(observer)
         for observer in self.observers():
-            print("            Installing log observer: ", observer)
-            globalLogPublisher.addObserver(observer)
-        for observer in globalLogPublisher._observers:
-            print("                 Using log observer: ", observer)
+            manager.add_observer(*observer)
 
     @property
     def log(self):
