@@ -1,6 +1,6 @@
 
 
-from tendril.asynchronous.utils.logger import TwistedLoggerMixin
+from tendril.tx.utils.logger import TwistedLoggerMixin
 
 
 class AsyncEngineBase(TwistedLoggerMixin):

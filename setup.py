@@ -46,11 +46,11 @@ build_requires = test_requires  # + ['doit', 'pyinstaller']
 publish_requires = build_requires + ['twine', 'pygithub']
 
 setup(
-    name='tendril-async-utils-core',
+    name='tendril-tx-utils-core',
     use_scm_version={"root": ".", "relative_to": __file__},
     author="Chintalagiri Shashank",
     author_email="shashank@chintal.in",
-    description="Core Utilities for the Asynchronous Tendril Stack",
+    description="Core Utilities for the Twisted-based Components of the Tendril Framework",
     long_description='\n'.join([read('README.rst'), read('CHANGELOG.rst')]),
     long_description_content_type='text/x-rst',
     keywords='tendril',
