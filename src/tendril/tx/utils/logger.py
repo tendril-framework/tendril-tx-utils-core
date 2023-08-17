@@ -2,12 +2,48 @@
 
 import io
 import sys
+from datetime import datetime
 from twisted import logger
 
 from twisted.logger import globalLogPublisher
 from twisted.logger import LogLevelFilterPredicate
 from twisted.logger import FilteringLogObserver
 from twisted.logger import textFileLogObserver
+from twisted.logger import FileLogObserver
+from twisted.logger import LogEvent
+from twisted.logger import formatEvent
+
+from tendril import config
+
+
+def _time_fmt():
+    if config.LOG_COMPACT_TS:
+        if config.LOG_COMPACT_TS_READABLE:
+            return '%m-%d %H%M.%S'
+        return '%s'
+    return 'YYYY-MM-DD HH:mm:ss.SSS'
+
+time_fmt = _time_fmt()
+
+
+def format_level(level):
+    if config.LOG_COMPACT_LEVEL or config.LOG_COMPACT_LEVEL_ICON:
+        return f'{level.name[0].upper()}'
+    return f'{level.name:<8}'
+
+
+def format_event(event: LogEvent):
+    time_str = datetime.fromtimestamp(event['log_time']).strftime(time_fmt)
+    level_str = format_level(event['log_level'])
+    if 'log_source' in event.keys():
+        logger_str = f"{event['log_source']}"
+    else:
+        logger_str = f"{event['log_namespace']}"
+    if 'system' in event.keys():
+        logger_str += f"#{event['system']}"
+    msg = formatEvent(event)
+    log_msg = f"{time_str} | {level_str} | {logger_str} - {msg}\n"
+    return log_msg
 
 
 class TwistedLogObserverManager(object):
@@ -58,6 +94,7 @@ class TwistedLoggerMixin(object):
         rv = []
         stdout_level = self.level
         if self.log_file:
+            print(f"Logging to {self.log_file}")
             rv.append(
                 ('file', FilteringLogObserver(
                     textFileLogObserver(io.open(self.log_file, 'a')),
@@ -67,7 +104,7 @@ class TwistedLoggerMixin(object):
             stdout_level = logger.LogLevel.warn
         rv.append(
             ('stdout', FilteringLogObserver(
-                textFileLogObserver(sys.stdout),
+                FileLogObserver(sys.stdout, formatEvent=format_event),
                 predicates=[LogLevelFilterPredicate(stdout_level)]
             ))
         )
