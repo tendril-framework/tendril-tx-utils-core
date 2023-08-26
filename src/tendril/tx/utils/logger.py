@@ -41,7 +41,10 @@ def format_event(event: LogEvent):
         logger_str = f"{event['log_namespace']}"
     if 'system' in event.keys():
         logger_str += f"#{event['system']}"
-    msg = formatEvent(event)
+    if 'log_failure' in event.keys():
+        msg = event['log_failure']
+    else:
+        msg = formatEvent(event)
     log_msg = f"{time_str} | {level_str} | {logger_str} - {msg}\n"
     return log_msg
 
