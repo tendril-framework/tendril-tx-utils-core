@@ -13,12 +13,15 @@ from twisted.logger import FileLogObserver
 from twisted.logger import LogEvent
 from twisted.logger import formatEvent
 
-from tendril import config
+from tendril.config import LOG_COMPACT_TS
+from tendril.config import LOG_COMPACT_TS_READABLE
+from tendril.config import LOG_COMPACT_LEVEL
+from tendril.config import LOG_COMPACT_LEVEL_ICON
 
 
 def _time_fmt():
-    if config.LOG_COMPACT_TS:
-        if config.LOG_COMPACT_TS_READABLE:
+    if LOG_COMPACT_TS:
+        if LOG_COMPACT_TS_READABLE:
             return '%m-%d %H%M.%S'
         return '%s'
     return 'YYYY-MM-DD HH:mm:ss.SSS'
@@ -27,7 +30,7 @@ time_fmt = _time_fmt()
 
 
 def format_level(level):
-    if config.LOG_COMPACT_LEVEL or config.LOG_COMPACT_LEVEL_ICON:
+    if LOG_COMPACT_LEVEL or LOG_COMPACT_LEVEL_ICON:
         return f'{level.name[0].upper()}'
     return f'{level.name:<8}'
 
@@ -74,11 +77,17 @@ manager.init()
 
 
 class TwistedLoggerMixin(object):
+    log_source_instance = False
+
     def __init__(self, *args, **kwargs):
         super(TwistedLoggerMixin, self).__init__(*args, **kwargs)
         self._log_file = None
-        self._log = logger.Logger(namespace=self.__class__.__name__,
-                                  source=self)
+        if self.log_source_instance:
+            self._log = logger.Logger(namespace=self.__class__.__name__,
+                                      source=self)
+        else:
+            self._log = logger.Logger(namespace=self.__class__.__name__,
+                                      source=self.__class__.__name__)
         self._log_level = logger.LogLevel.info
 
     @property
